@@ -1,5 +1,7 @@
 import face_recognition
 import cv2
+import requests
+import base64
 
 # This is a super simple (but slow) example of running face recognition on live video from your webcam.
 # There's a second example that's a little more complicated but runs faster.
@@ -22,11 +24,26 @@ while True:
 
     # Find all the faces and face enqcodings in the frame of video
     face_locations = face_recognition.face_locations(rgb_frame)
-    face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+    # face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+
+
+
+
+
 
     for (top, right, bottom, left) in face_locations:
-        frame = frame[top:bottom, left:right]
-        print(frame)
+
+        frame = frame[top:bottom+1, left:right+1]
+        _, img_encoded = cv2.imencode('.jpg', frame)
+        jpg_as_text = base64.b64encode(img_encoded)
+        print(jpg_as_text)
+        payload = {'photo': jpg_as_text}
+
+        # payload = {'photo': frame}
+
+        r = requests.post('http://127.0.0.1:8000/search/', data=payload)
+
+
     cv2.imshow('Video', frame)
 
     # Loop through each face in this frame of video
