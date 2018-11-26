@@ -5,7 +5,7 @@ import base64
 import numpy as np
 import threading
 import find_target
-import logica_embarcados2
+from logica_embarcados2 import Eletronica
 
 face_locations = None
 frame = None
@@ -46,7 +46,7 @@ def recognition():
                 _, img_encoded = cv2.imencode('.jpg', face)
                 jpg_as_text = base64.b64encode(img_encoded)
                 payload = {'photo': jpg_as_text}
-                r = requests.post('http://127.0.0.1:8000/search/', data=payload)
+                r = requests.post('http://192.168.0.15:8000/search/', data=payload)
                 macs.append(r.text[1:-1])
 
             for mac in macs:
@@ -55,13 +55,14 @@ def recognition():
                 t.join()
 
             print(results)
+            
             if results.count(True) > 0:
                 print('abrir porta') #ALTERAR PARA REQUISICAO
 
-                logica_embarcados2.eletronica.upadte_server_value(0) #ACESSO LIBERADO
+                Eletronica().update_server_value(0) #ACESSO LIBERADO
 
             else:
-                logica_embarcados2.eletronica.upadte_server_value(1) #ACESSO NEGADO
+                Eletronica().update_server_value(1) #ACESSO NEGADO
 
 
 
