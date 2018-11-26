@@ -6,8 +6,12 @@ import numpy as np
 import threading
 import find_target
 
-def capture():
+face_locations = None
+frame = None
 
+def capture():
+    global face_locations
+    global frame
     video_capture = cv2.VideoCapture(0)
 
     while True:
@@ -16,27 +20,43 @@ def capture():
 
         # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
         rgb_frame = frame[:, :, ::-1]
+        face_locations = face_recognition.face_locations(rgb_frame)
 
         # Find all the faces and face enqcodings in the frame of video
-        face_locations = face_recognition.face_locations(rgb_frame)
-        macs = []
-        results = []
-        for (top, right, bottom, left) in face_locations:
-
-            face = frame[top:bottom+1, left:right+1]
-            _, img_encoded = cv2.imencode('.jpg', face)
-            jpg_as_text = base64.b64encode(img_encoded)
-            payload = {'photo': jpg_as_text}
-            r = requests.post('http://127.0.0.1:8000/search/', data=payload)
-            macs.append(r.text[1:-1])
-
-        for mac in macs:
-            t = threading.Thread(target=find_target.find_target, args=(mac,results,))
-            t.start()
-            t.join()
-
-        print(results)
         cv2.imshow('Video', frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    video_capture.release()
+    cv2.destroyAllWindows()
+
+
+def recognition():
+    global face_locations
+
+    while True:
+        if(face_locations):
+            macs = []
+            results = []
+            for (top, right, bottom, left) in face_locations:
+
+                face = frame[top:bottom+1, left:right+1]
+                _, img_encoded = cv2.imencode('.jpg', face)
+                jpg_as_text = base64.b64encode(img_encoded)
+                payload = {'photo': jpg_as_text}
+                r = requests.post('http://127.0.0.1:8000/search/', data=payload)
+                macs.append(r.text[1:-1])
+
+            for mac in macs:
+                t = threading.Thread(target=find_target.find_target, args=(mac,results,))
+                t.start()
+                t.join()
+
+            print(results)
+            if results.count(True) > 0:
+                print('abrir porta') #ALTERAR PARA REQUISICAO
+
 
         # # Loop through each face in this frame of video
         # for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
@@ -62,11 +82,10 @@ def capture():
         # # cv2.imshow('Video', frame)
 
         # Hit 'q' on the keyboard to quit!
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
 
-    video_capture.release()
-    cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    capture()
+    c = threading.Thread(target=capture, args=())
+    r = threading.Thread(target=recognition, args=())
+    c.start()
+    r.start()
