@@ -5,6 +5,7 @@ import base64
 import numpy as np
 import threading
 import find_target
+import logica_embarcados2
 
 face_locations = None
 frame = None
@@ -56,6 +57,12 @@ def recognition():
             print(results)
             if results.count(True) > 0:
                 print('abrir porta') #ALTERAR PARA REQUISICAO
+
+                logica_embarcados2.eletronica.upadte_server_value(0) #ACESSO LIBERADO
+
+            else:
+                logica_embarcados2.eletronica.upadte_server_value(1) #ACESSO NEGADO
+
 
 
         # # Loop through each face in this frame of video
